@@ -1,0 +1,191 @@
+{
+  "info": {
+    "name": "BarberTime API — Sprint 1",
+    "description": "Coleção para cadastro, login (JWT), listagem de horários disponíveis e criação de agendamento.\n\nVariável `baseUrl` padrão: `http://localhost:3000`. Após login ou registro, copie `token` para a variável `accessToken` (usada em Agendar corte).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "barberId", "value": "11111111-1111-1111-1111-111111111111" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": { "method": "GET", "header": [], "url": "{{baseUrl}}/health" },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"ok\",\n  \"service\": \"barbertime-api\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/register — Cadastro cliente (JWT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@exemplo.com\",\n  \"password\": \"senha123\",\n  \"fullName\": \"Carlos Cliente\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "description": "Cria usuário com perfil `client` e retorna JWT + dados públicos do usuário."
+          },
+          "response": [
+            {
+              "name": "201 Created — exemplo",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@exemplo.com\",\n  \"password\": \"senha123\",\n  \"fullName\": \"Carlos Cliente\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/register"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"b0c0c0c0-c0c0-40c0-c0c0-c0c0c0c0c0c0\",\n    \"email\": \"cliente@exemplo.com\",\n    \"fullName\": \"Carlos Cliente\",\n    \"role\": \"client\",\n    \"createdAt\": \"2026-05-11T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/auth/login — Login (JWT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@exemplo.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Autentica por e-mail e senha; retorna o mesmo formato do cadastro."
+          },
+          "response": [
+            {
+              "name": "200 OK — exemplo",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"email\": \"cliente@exemplo.com\",\n  \"password\": \"senha123\"\n}" },
+                "url": "{{baseUrl}}/api/v1/auth/login"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"b0c0c0c0-c0c0-40c0-c0c0-c0c0c0c0c0c0\",\n    \"email\": \"cliente@exemplo.com\",\n    \"fullName\": \"Carlos Cliente\",\n    \"role\": \"client\",\n    \"createdAt\": \"2026-05-11T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Disponibilidade",
+      "item": [
+        {
+          "name": "GET /api/v1/availability/available-slots — Listar horários livres",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/availability/available-slots?barberId={{barberId}}&date=2026-05-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "availability", "available-slots"],
+              "query": [
+                { "key": "barberId", "value": "{{barberId}}" },
+                { "key": "date", "value": "2026-05-15", "description": "Dia civil no fuso SCHEDULE_TIMEZONE (padrão America/Sao_Paulo)" }
+              ]
+            },
+            "description": "Retorna instantes `startsAt`/`endsAt` em ISO (UTC) para slots de 30 min dentro do expediente, excluindo conflitos com agendamentos ativos."
+          },
+          "response": [
+            {
+              "name": "200 OK — exemplo",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{baseUrl}}/api/v1/availability/available-slots?barberId=11111111-1111-1111-1111-111111111111&date=2026-05-15"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"barberId\": \"11111111-1111-1111-1111-111111111111\",\n  \"barberName\": \"João Barbeiro\",\n  \"date\": \"2026-05-15\",\n  \"slotDurationMinutes\": 30,\n  \"availableSlots\": [\n    {\n      \"startsAt\": \"2026-05-15T12:00:00.000Z\",\n      \"endsAt\": \"2026-05-15T12:30:00.000Z\",\n      \"timezone\": \"America/Sao_Paulo\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agendamentos",
+      "item": [
+        {
+          "name": "POST /api/v1/appointments — Agendar corte (JWT)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"barberId\": \"11111111-1111-1111-1111-111111111111\",\n  \"startsAt\": \"2026-05-15T12:00:00.000Z\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/appointments",
+            "description": "Cria agendamento para o cliente autenticado. O horário deve estar livre (sem sobreposição) e alinhado à grade. Use um `startsAt` retornado por available-slots ou equivalente em ISO 8601."
+          },
+          "response": [
+            {
+              "name": "201 Created — exemplo",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer <jwt>" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"barberId\": \"11111111-1111-1111-1111-111111111111\",\n  \"startsAt\": \"2026-05-15T12:00:00.000Z\"\n}"
+                },
+                "url": "{{baseUrl}}/api/v1/appointments"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": \"a1a1a1a1-a1a1-41a1-a1a1-a1a1a1a1a1a1\",\n  \"clientId\": \"b0c0c0c0-c0c0-40c0-c0c0-c0c0c0c0c0c0\",\n  \"barberId\": \"11111111-1111-1111-1111-111111111111\",\n  \"startsAt\": \"2026-05-15T12:00:00.000Z\",\n  \"endsAt\": \"2026-05-15T12:30:00.000Z\",\n  \"status\": \"scheduled\",\n  \"createdAt\": \"2026-05-11T14:00:00.000Z\"\n}"
+            },
+            {
+              "name": "409 Conflict — horário ocupado",
+              "originalRequest": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/v1/appointments" },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Horário indisponível: já existe agendamento neste intervalo.\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

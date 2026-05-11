@@ -1,0 +1,23 @@
+{
+  "name": "barbertime-api",
+  "version": "1.0.0",
+  "description": "API REST para agendamento em barbearia — Sprint 1 (LDAMD)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:migrate": "node database/migrate.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.5.0",
+    "pg": "^8.13.1"
+  }
+}

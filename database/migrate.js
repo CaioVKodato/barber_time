@@ -19,9 +19,18 @@ async function main() {
   await client.connect();
 
   const schemaPath = path.join(__dirname, 'schema.sql');
-  const sql = fs.readFileSync(schemaPath, 'utf8');
+  await client.query(fs.readFileSync(schemaPath, 'utf8'));
 
-  await client.query(sql);
+  const patchesDir = path.join(__dirname, 'patches');
+  if (fs.existsSync(patchesDir)) {
+    const patchFiles = fs.readdirSync(patchesDir).filter((f) => f.endsWith('.sql')).sort();
+    for (const file of patchFiles) {
+      const patchSql = fs.readFileSync(path.join(patchesDir, file), 'utf8');
+      await client.query(patchSql);
+      console.log(`Patch aplicado: ${file}`);
+    }
+  }
+
   console.log('Migração aplicada com sucesso.');
   await client.end();
 }

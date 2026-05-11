@@ -34,10 +34,11 @@ export class UserRepository {
 
   /**
    * @param {{ email: string; passwordHash: string; fullName: string; role?: string }} data
+   * @param {import('pg').Pool | import('pg').PoolClient} [executor]
    */
-  async create(data) {
+  async create(data, executor = this.pool) {
     const role = data.role ?? 'client';
-    const { rows } = await this.pool.query(
+    const { rows } = await executor.query(
       `INSERT INTO users (email, password_hash, full_name, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, email, full_name, role, created_at`,

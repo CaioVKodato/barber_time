@@ -22,8 +22,33 @@ export class BarberRepository {
 
   async listActive() {
     const { rows } = await this.pool.query(
-      `SELECT id, full_name, active FROM barbers WHERE active = true ORDER BY full_name`,
+      `SELECT id, full_name, active, user_id FROM barbers WHERE active = true ORDER BY full_name`,
     );
     return rows;
+  }
+
+  /**
+   * @param {string} userId
+   */
+  async findByUserId(userId) {
+    const { rows } = await this.pool.query(
+      `SELECT id, full_name, active, user_id FROM barbers WHERE user_id = $1`,
+      [userId],
+    );
+    return rows[0] ?? null;
+  }
+
+  /**
+   * @param {{ fullName: string; userId: string }} data
+   * @param {import('pg').Pool | import('pg').PoolClient} [executor]
+   */
+  async create(data, executor = this.pool) {
+    const { rows } = await executor.query(
+      `INSERT INTO barbers (full_name, user_id)
+       VALUES ($1, $2)
+       RETURNING id, full_name, active, user_id, created_at`,
+      [data.fullName.trim(), data.userId],
+    );
+    return rows[0];
   }
 }

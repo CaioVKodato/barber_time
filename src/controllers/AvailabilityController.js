@@ -9,6 +9,18 @@ export class AvailabilityController {
     this.availabilityService = availabilityService;
   }
 
+  listDay = async (req, res, next) => {
+    try {
+      const { date } = req.query;
+      const result = await this.availabilityService.listDayOverview(
+        typeof date === 'string' ? date : '',
+      );
+      return res.status(200).json(result);
+    } catch (e) {
+      next(e);
+    }
+  };
+
   listAvailable = async (req, res, next) => {
     try {
       const { barberId, date } = req.query;

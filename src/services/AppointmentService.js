@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon';
 import { env } from '../config/env.js';
+import { isValidBookableSlotStart } from '../domain/schedulePolicy.js';
 import { AppError } from '../errors/AppError.js';
 import { AppointmentRepository } from '../repositories/AppointmentRepository.js';
 import { BarberRepository } from '../repositories/BarberRepository.js';
 
 /**
- * Criação de agendamentos com validação de conflito de horário.
+ * Agendamentos: criar, listar do cliente, remarcar e cancelar.
  */
 export class AppointmentService {
   /**
@@ -21,23 +22,14 @@ export class AppointmentService {
   }
 
   /**
-   * @param {{ clientId: string; barberId: string; startsAtIso: string }} input startsAt em ISO8601 (instante único UTC ou com offset)
+   * @param {{ clientId: string; barberId: string; startsAtIso: string }} input
    */
   async scheduleHaircut(input) {
     if (!input.barberId) {
       throw new AppError('barberId é obrigatório.', 422);
     }
-    if (!input.startsAtIso) {
-      throw new AppError('startsAt é obrigatório (ISO 8601).', 422);
-    }
 
-    const starts = DateTime.fromISO(input.startsAtIso, { setZone: true });
-    if (!starts.isValid) {
-      throw new AppError('startsAt inválido. Use ISO 8601.', 422);
-    }
-
-    const startsUtc = starts.toUTC();
-    const endsUtc = startsUtc.plus({ minutes: env.slotDurationMinutes });
+    const { starts, startsUtc, endsUtc } = this.#parseSlot(input.startsAtIso);
 
     const barber = await this.barberRepository.findActiveById(input.barberId);
     if (!barber) {
@@ -50,6 +42,7 @@ export class AppointmentService {
       input.barberId,
       startsUtc.toJSDate(),
       endsUtc.toJSDate(),
+      null,
     );
     if (conflict) {
       throw new AppError('Horário indisponível: já existe agendamento neste intervalo.', 409);
@@ -71,8 +64,100 @@ export class AppointmentService {
     }
   }
 
-  #toResponse(row) {
-    return {
+  /**
+   * @param {string} clientId
+   */
+  async listByClient(clientId) {
+    const rows = await this.appointmentRepository.listByClientId(clientId);
+    return rows.map((row) => this.#toResponse(row, true));
+  }
+
+  /**
+   * @param {{ clientId: string; appointmentId: string; startsAtIso: string }} input
+   */
+  async rescheduleAppointment(input) {
+    const row = await this.appointmentRepository.findByIdAndClientId(input.appointmentId, input.clientId);
+    if (!row) {
+      throw new AppError('Agendamento não encontrado.', 404);
+    }
+    if (row.status !== 'pending' && row.status !== 'confirmed') {
+      throw new AppError('Só é possível remarcar agendamentos pendentes ou já confirmados.', 409);
+    }
+
+    const { starts, startsUtc, endsUtc } = this.#parseSlot(input.startsAtIso);
+
+    const barber = await this.barberRepository.findActiveById(row.barber_id);
+    if (!barber) {
+      throw new AppError('Barbeiro não encontrado ou inativo.', 404);
+    }
+
+    this.#assertWithinBusinessDay(starts);
+
+    const conflict = await this.appointmentRepository.existsActiveAtSlot(
+      row.barber_id,
+      startsUtc.toJSDate(),
+      endsUtc.toJSDate(),
+      input.appointmentId,
+    );
+    if (conflict) {
+      throw new AppError('Horário indisponível: já existe agendamento neste intervalo.', 409);
+    }
+
+    try {
+      const updated = await this.appointmentRepository.updateSchedule(
+        input.appointmentId,
+        input.clientId,
+        startsUtc.toJSDate(),
+        endsUtc.toJSDate(),
+      );
+      if (!updated) {
+        throw new AppError('Não foi possível remarcar o agendamento.', 409);
+      }
+      const withName = await this.appointmentRepository.findByIdAndClientId(input.appointmentId, input.clientId);
+      return this.#toResponse(withName, true);
+    } catch (err) {
+      if (err && err.code === '23505') {
+        throw new AppError('Horário indisponível: conflito ao salvar.', 409);
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * @param {string} clientId
+   * @param {string} appointmentId
+   */
+  async cancelAppointment(clientId, appointmentId) {
+    const row = await this.appointmentRepository.cancelByClient(appointmentId, clientId);
+    if (!row) {
+      const existing = await this.appointmentRepository.findByIdAndClientId(appointmentId, clientId);
+      if (!existing) {
+        throw new AppError('Agendamento não encontrado.', 404);
+      }
+      throw new AppError('Só é possível cancelar agendamentos pendentes ou já confirmados.', 409);
+    }
+    return this.#toResponse(row, true);
+  }
+
+  /**
+   * @param {string | undefined} startsAtIso
+   */
+  #parseSlot(startsAtIso) {
+    if (!startsAtIso) {
+      throw new AppError('startsAt é obrigatório (ISO 8601).', 422);
+    }
+    const starts = DateTime.fromISO(startsAtIso, { setZone: true });
+    if (!starts.isValid) {
+      throw new AppError('startsAt inválido. Use ISO 8601.', 422);
+    }
+    const startsUtc = starts.toUTC();
+    const endsUtc = startsUtc.plus({ minutes: env.slotDurationMinutes });
+    return { starts, startsUtc, endsUtc };
+  }
+
+  /** @param {boolean} [includeBarberName] */
+  #toResponse(row, includeBarberName = false) {
+    const base = {
       id: row.id,
       clientId: row.client_id,
       barberId: row.barber_id,
@@ -81,23 +166,27 @@ export class AppointmentService {
       status: row.status,
       createdAt: row.created_at.toISOString(),
     };
+    if (includeBarberName && row.barber_full_name) {
+      return { ...base, barberName: row.barber_full_name };
+    }
+    return base;
   }
 
   /**
-   * Garante que o início do slot pertence ao dia de expediente configurado (fuso America/Sao_Paulo por padrão).
    * @param {DateTime} startsWithZone
    */
   #assertWithinBusinessDay(startsWithZone) {
     const local = startsWithZone.setZone(env.scheduleTimezone);
-    const open = local.set({ hour: env.dayStartHour, minute: 0, second: 0, millisecond: 0 });
-    const close = local.set({ hour: env.dayEndHour, minute: 0, second: 0, millisecond: 0 });
+    if (isValidBookableSlotStart(local)) return;
 
-    if (local < open || local >= close) {
-      throw new AppError('Horário fora do expediente configurado para a barbearia.', 422);
+    const dateStr = local.toFormat('yyyy-MM-dd');
+    if (local.weekday === 7 && env.closedOnSunday) {
+      throw new AppError('A barbearia não abre aos domingos.', 422);
     }
 
-    if (local.minute % env.slotDurationMinutes !== 0 || local.second !== 0 || local.millisecond !== 0) {
-      throw new AppError(`startsAt deve alinhar à grade de ${env.slotDurationMinutes} minutos (ex.: 09:00, 09:30).`, 422);
-    }
+    throw new AppError(
+      `Horário inválido: fora do expediente (${env.dayStartHour}h–${env.dayEndHour}h), intervalo de almoço ou fora da grade de ${env.slotDurationMinutes} min (data local ${dateStr}).`,
+      422,
+    );
   }
 }

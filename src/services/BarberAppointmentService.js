@@ -1,4 +1,5 @@
 import { AppError } from '../errors/AppError.js';
+import { EventPublisher } from '../messaging/EventPublisher.js';
 import { AppointmentRepository } from '../repositories/AppointmentRepository.js';
 import { BarberRepository } from '../repositories/BarberRepository.js';
 
@@ -9,13 +10,16 @@ export class BarberAppointmentService {
   /**
    * @param {AppointmentRepository} appointmentRepository
    * @param {BarberRepository} barberRepository
+   * @param {EventPublisher} eventPublisher
    */
   constructor(
     appointmentRepository = new AppointmentRepository(),
     barberRepository = new BarberRepository(),
+    eventPublisher = new EventPublisher(),
   ) {
     this.appointmentRepository = appointmentRepository;
     this.barberRepository = barberRepository;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -57,6 +61,18 @@ export class BarberAppointmentService {
     }
 
     const row = await this.appointmentRepository.findByIdAndBarberId(appointmentId, barber.id);
+
+    await this.eventPublisher.publishAppointmentConfirmed({
+      appointmentId: row.id,
+      clientId: row.client_id,
+      clientFullName: row.client_full_name,
+      clientEmail: row.client_email,
+      barberId: row.barber_id,
+      barberName: row.barber_full_name,
+      startsAt: row.starts_at.toISOString(),
+      endsAt: row.ends_at.toISOString(),
+    });
+
     return this.#toBarberPortalRow(row);
   }
 

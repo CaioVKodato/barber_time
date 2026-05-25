@@ -1,18 +1,25 @@
 {
   "name": "barbertime-api",
   "version": "1.0.0",
-  "description": "API REST para agendamento em barbearia — Sprint 1 (LDAMD)",
+  "description": "API REST para agendamento em barbearia — Sprint 2 (LDAMD)",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "db:migrate": "node database/migrate.js"
+    "worker:notifications": "node src/workers/notificationWorker.js",
+    "db:migrate": "node database/migrate.js",
+    "docs:pdf": "node scripts/generate-docs-pdf.mjs",
+    "docs:pdf:sprint2": "node scripts/generate-docs-pdf.mjs --sprint2"
   },
   "engines": {
     "node": ">=16"
   },
+  "devDependencies": {
+    "md-to-pdf": "^5.2.4"
+  },
   "dependencies": {
+    "amqplib": "^0.10.5",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",

@@ -2,8 +2,10 @@ import { DateTime } from 'luxon';
 import { env } from '../config/env.js';
 import { isValidBookableSlotStart } from '../domain/schedulePolicy.js';
 import { AppError } from '../errors/AppError.js';
+import { EventPublisher } from '../messaging/EventPublisher.js';
 import { AppointmentRepository } from '../repositories/AppointmentRepository.js';
 import { BarberRepository } from '../repositories/BarberRepository.js';
+import { UserRepository } from '../repositories/UserRepository.js';
 
 /**
  * Agendamentos: criar, listar do cliente, remarcar e cancelar.
@@ -12,13 +14,19 @@ export class AppointmentService {
   /**
    * @param {AppointmentRepository} appointmentRepository
    * @param {BarberRepository} barberRepository
+   * @param {UserRepository} userRepository
+   * @param {EventPublisher} eventPublisher
    */
   constructor(
     appointmentRepository = new AppointmentRepository(),
     barberRepository = new BarberRepository(),
+    userRepository = new UserRepository(),
+    eventPublisher = new EventPublisher(),
   ) {
     this.appointmentRepository = appointmentRepository;
     this.barberRepository = barberRepository;
+    this.userRepository = userRepository;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -55,6 +63,9 @@ export class AppointmentService {
         startsAt: startsUtc.toJSDate(),
         endsAt: endsUtc.toJSDate(),
       });
+
+      await this.#publishAppointmentRequested(row, barber);
+
       return this.#toResponse(row);
     } catch (err) {
       if (err && err.code === '23505') {
@@ -137,6 +148,28 @@ export class AppointmentService {
       throw new AppError('Só é possível cancelar agendamentos pendentes ou já confirmados.', 409);
     }
     return this.#toResponse(row, true);
+  }
+
+  /**
+   * @param {{ id: string; client_id: string; barber_id: string; starts_at: Date; ends_at: Date }} row
+   * @param {{ full_name: string }} barber
+   */
+  async #publishAppointmentRequested(row, barber) {
+    const [client, barberTarget] = await Promise.all([
+      this.userRepository.findById(row.client_id),
+      this.barberRepository.findNotificationTargetById(row.barber_id),
+    ]);
+
+    await this.eventPublisher.publishAppointmentRequested({
+      appointmentId: row.id,
+      barberId: row.barber_id,
+      barberName: barber.full_name,
+      barberEmail: barberTarget?.email ?? null,
+      clientId: row.client_id,
+      clientFullName: client?.full_name ?? 'Cliente',
+      startsAt: row.starts_at.toISOString(),
+      endsAt: row.ends_at.toISOString(),
+    });
   }
 
   /**

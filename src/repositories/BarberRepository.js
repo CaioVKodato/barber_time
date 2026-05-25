@@ -20,6 +20,21 @@ export class BarberRepository {
     return rows[0] ?? null;
   }
 
+  /**
+   * Dados para notificação ao barbeiro (e-mail via users vinculado).
+   * @param {string} barberId
+   */
+  async findNotificationTargetById(barberId) {
+    const { rows } = await this.pool.query(
+      `SELECT b.id, b.full_name, u.email, u.full_name AS user_full_name
+       FROM barbers b
+       LEFT JOIN users u ON u.id = b.user_id
+       WHERE b.id = $1 AND b.active = true`,
+      [barberId],
+    );
+    return rows[0] ?? null;
+  }
+
   async listActive() {
     const { rows } = await this.pool.query(
       `SELECT id, full_name, active, user_id FROM barbers WHERE active = true ORDER BY full_name`,

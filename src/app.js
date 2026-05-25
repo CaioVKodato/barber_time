@@ -1,4 +1,6 @@
 import express from 'express';
+import { env } from './config/env.js';
+import { RabbitMQClient } from './messaging/RabbitMQClient.js';
 import { createApiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -11,7 +13,14 @@ export function createApp() {
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok', service: 'barbertime-api' });
+    res.status(200).json({
+      status: 'ok',
+      service: 'barbertime-api',
+      rabbitmq: {
+        enabled: env.rabbitmqEnabled,
+        connected: RabbitMQClient.getInstance().isConnected(),
+      },
+    });
   });
 
   app.use('/api/v1', createApiRouter());

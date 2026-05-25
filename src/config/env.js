@@ -37,6 +37,8 @@ export const env = {
     const em = Number(process.env.LUNCH_END_MINUTE ?? 0);
     return sh < eh || (sh === eh && sm < em);
   })(),
+  rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://barbertime:barbertime@localhost:5673',
+  rabbitmqEnabled: parseBool(process.env.RABBITMQ_ENABLED, true),
 };
 
 export function assertDatabaseUrl() {

@@ -44,6 +44,7 @@ export class AppointmentService {
       throw new AppError('Barbeiro não encontrado ou inativo.', 404);
     }
 
+    this.#assertNotInPast(startsUtc);
     this.#assertWithinBusinessDay(starts);
 
     const conflict = await this.appointmentRepository.existsActiveAtSlot(
@@ -102,6 +103,7 @@ export class AppointmentService {
       throw new AppError('Barbeiro não encontrado ou inativo.', 404);
     }
 
+    this.#assertNotInPast(startsUtc);
     this.#assertWithinBusinessDay(starts);
 
     const conflict = await this.appointmentRepository.existsActiveAtSlot(
@@ -203,6 +205,16 @@ export class AppointmentService {
       return { ...base, barberName: row.barber_full_name };
     }
     return base;
+  }
+
+  /**
+   * Impede agendar/remarcar para um instante que já passou.
+   * @param {DateTime} startsUtc
+   */
+  #assertNotInPast(startsUtc) {
+    if (startsUtc <= DateTime.utc()) {
+      throw new AppError('Não é possível agendar em um horário que já passou.', 422);
+    }
   }
 
   /**

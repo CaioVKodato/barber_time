@@ -4,7 +4,7 @@
 INSERT INTO users (id, email, password_hash, full_name, role) VALUES
   (
     '33333333-3333-4333-8333-333333333333',
-    'joao.barbeiro@barbertime.seed',
+    'caio.kodato@sga.pucminas.br',
     '$2a$10$4IxJWac6eqUWeXMCPLQQp.zB0nNfOTjkJ3ErZ6h8TmFHftxvmq31O',
     'João Barbeiro',
     'barber'

@@ -39,6 +39,14 @@ export const env = {
   })(),
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://barbertime:barbertime@localhost:5673',
   rabbitmqEnabled: parseBool(process.env.RABBITMQ_ENABLED, true),
+  /** E-mail SMTP (Gmail: senha de app em https://myaccount.google.com/apppasswords) */
+  emailEnabled: parseBool(process.env.EMAIL_ENABLED, false),
+  smtpHost: process.env.SMTP_HOST ?? 'smtp.gmail.com',
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpSecure: parseBool(process.env.SMTP_SECURE, false),
+  smtpUser: (process.env.SMTP_USER ?? '').trim(),
+  smtpPass: (process.env.SMTP_PASS ?? '').replace(/\s/g, ''),
+  emailFrom: process.env.EMAIL_FROM ?? process.env.SMTP_USER ?? 'BarberTime <noreply@local>',
 };
 
 export function assertDatabaseUrl() {

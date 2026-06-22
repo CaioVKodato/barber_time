@@ -21,7 +21,7 @@ async function bootstrap() {
     console.log('[RabbitMQ] Desabilitado (RABBITMQ_ENABLED=false).');
   }
 
-  app.listen(env.port, () => {
+  app.listen(env.port, '0.0.0.0', () => {
     console.log(`BarberTime API ouvindo na porta ${env.port}`);
   });
 }

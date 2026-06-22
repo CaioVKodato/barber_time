@@ -112,10 +112,15 @@ export class AvailabilityService {
     const slotMinutes = env.slotDurationMinutes;
     const available = [];
     const slotStarts = getBookableSlotStartsLocal(date);
+    const nowUtc = DateTime.utc();
 
     for (const cursor of slotStarts) {
       const slotStartUtc = cursor.toUTC();
       const slotEndUtc = cursor.plus({ minutes: slotMinutes }).toUTC();
+
+      // Não oferecer horários cujo início já passou (relevante para o dia atual).
+      if (slotStartUtc <= nowUtc) continue;
+
       const slotInterval = Interval.fromDateTimes(slotStartUtc, slotEndUtc);
 
       const overlaps = bookedIntervals.some((bi) => bi.isValid && slotInterval.overlaps(bi));

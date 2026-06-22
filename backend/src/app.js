@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { env } from './config/env.js';
 import { RabbitMQClient } from './messaging/RabbitMQClient.js';
 import { createApiRouter } from './routes/index.js';
@@ -10,6 +11,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 export function createApp() {
   const app = express();
 
+  app.use(cors());
   app.use(express.json());
 
   app.get('/health', (_req, res) => {

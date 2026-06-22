@@ -35,7 +35,15 @@ npm run docs:pdf:sprint2
 
 Todos os documentos (incl. Sprint 1): `npm run docs:pdf`
 
+## Sprint 3 — App Flutter Cliente
+
+| Documento | Descrição |
+|-----------|-----------|
+| [ENTREGA_SPRINT3.md](sprint3/ENTREGA_SPRINT3.md) | Entrega: critérios, telas, demonstração |
+| [ARQUITETURA_MOBILE.md](sprint3/ARQUITETURA_MOBILE.md) | Clean Architecture, diagramas, fluxos |
+
+**Código:** `mobile_client/` (Flutter)
+
 ## Sprints futuras
 
-- **Sprint 3:** App Flutter cliente → `docs/sprint3/`
 - **Sprint 4:** App Flutter prestador + entrega final → `docs/sprint4/`

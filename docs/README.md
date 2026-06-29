@@ -44,6 +44,13 @@ Todos os documentos (incl. Sprint 1): `npm run docs:pdf`
 
 **Código:** `mobile_client/` (Flutter)
 
-## Sprints futuras
+## Sprint 4 — App Flutter Prestador + Entrega Final
 
-- **Sprint 4:** App Flutter prestador + entrega final → `docs/sprint4/`
+| Documento | Descrição |
+|-----------|-----------|
+| [RelatorioTecnicoFinal_BarberTime.pdf](sprint4/RelatorioTecnicoFinal_BarberTime.pdf) | Relatório técnico final (arquitetura, EDA/MOM/Clean Architecture/REST, referências) |
+| [ArquiteturaPrestador_BarberTime.pdf](sprint4/ArquiteturaPrestador_BarberTime.pdf) | Clean Architecture do app prestador, camadas, polling |
+| [EntregaSprint4_BarberTime.pdf](sprint4/EntregaSprint4_BarberTime.pdf) | Entrega: critérios, fluxo de ponta a ponta, screencast de demonstração |
+| [Screencast_BarberTime_Sprint4.mp4](sprint4/Screencast_BarberTime_Sprint4.mp4) | Vídeo da demonstração de ponta a ponta (≈4min54s) |
+
+**Código:** `mobile_provider/` (Flutter) + endpoint `PATCH /barber/appointments/:id/reject` e evento `appointment.rejected` no backend.

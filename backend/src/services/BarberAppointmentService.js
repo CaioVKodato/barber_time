@@ -76,6 +76,42 @@ export class BarberAppointmentService {
     return this.#toBarberPortalRow(row);
   }
 
+  /**
+   * Recusa uma solicitação pendente e notifica o cliente via MOM.
+   * @param {string} authUserId
+   * @param {string} appointmentId
+   */
+  async rejectAppointment(authUserId, appointmentId) {
+    const barber = await this.barberRepository.findByUserId(authUserId);
+    if (!barber) {
+      throw new AppError('Conta não possui perfil de barbeiro vinculado.', 403);
+    }
+
+    const updated = await this.appointmentRepository.rejectByBarber(appointmentId, barber.id);
+    if (!updated) {
+      const existing = await this.appointmentRepository.findByIdAndBarberId(appointmentId, barber.id);
+      if (!existing) {
+        throw new AppError('Agendamento não encontrado para este barbeiro.', 404);
+      }
+      throw new AppError('Só é possível recusar solicitações com status pending.', 409);
+    }
+
+    const row = await this.appointmentRepository.findByIdAndBarberId(appointmentId, barber.id);
+
+    await this.eventPublisher.publishAppointmentRejected({
+      appointmentId: row.id,
+      clientId: row.client_id,
+      clientFullName: row.client_full_name,
+      clientEmail: row.client_email,
+      barberId: row.barber_id,
+      barberName: row.barber_full_name,
+      startsAt: row.starts_at.toISOString(),
+      endsAt: row.ends_at.toISOString(),
+    });
+
+    return this.#toBarberPortalRow(row);
+  }
+
   #toBarberPortalRow(row) {
     return {
       id: row.id,

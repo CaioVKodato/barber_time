@@ -163,6 +163,22 @@ export class AppointmentRepository {
   }
 
   /**
+   * Recusa (cancela) uma solicitação pendente do barbeiro.
+   * @param {string} appointmentId
+   * @param {string} barberId
+   */
+  async rejectByBarber(appointmentId, barberId) {
+    const { rows } = await this.pool.query(
+      `UPDATE appointments
+       SET status = 'cancelled'
+       WHERE id = $1 AND barber_id = $2 AND status = 'pending'
+       RETURNING id, client_id, barber_id, starts_at, ends_at, status, created_at`,
+      [appointmentId, barberId],
+    );
+    return rows[0] ?? null;
+  }
+
+  /**
    * @param {string} appointmentId
    * @param {string} clientId
    * @param {Date} startsAt

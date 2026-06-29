@@ -106,4 +106,35 @@ export class EmailService {
 <p>Até lá!</p>`,
     });
   }
+
+  /**
+   * @param {{ to: string; clientFullName: string; barberName: string; startsAt: string; endsAt: string; appointmentId: string }} input
+   */
+  async sendClientAppointmentRejected(input) {
+    if (!this.#transporter) return;
+
+    const slot = this.#formatSlot(input.startsAt, input.endsAt);
+    const subject = 'BarberTime — Solicitação recusada';
+    const text = [
+      `Olá, ${input.clientFullName}!`,
+      '',
+      `Infelizmente ${input.barberName} não pôde atender sua solicitação de horário.`,
+      `Horário solicitado: ${slot}`,
+      `ID do agendamento: ${input.appointmentId}`,
+      '',
+      'Você pode escolher outro horário pelo app. Esperamos te atender em breve!',
+    ].join('\n');
+
+    await this.#transporter.sendMail({
+      from: env.emailFrom,
+      to: input.to,
+      subject,
+      text,
+      html: `<p>Olá, <strong>${input.clientFullName}</strong>!</p>
+<p>Infelizmente <strong>${input.barberName}</strong> não pôde atender sua solicitação de horário.</p>
+<p><strong>Horário solicitado:</strong> ${slot}<br/>
+<strong>ID:</strong> ${input.appointmentId}</p>
+<p>Você pode escolher outro horário pelo app. Esperamos te atender em breve!</p>`,
+    });
+  }
 }

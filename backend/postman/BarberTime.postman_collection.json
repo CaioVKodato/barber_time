@@ -598,6 +598,53 @@
               "body": "{\"error\":\"Só é possível confirmar solicitações com status pending.\"}"
             }
           ]
+        },
+        {
+          "name": "PATCH /api/v1/barber/appointments/:id/reject",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{barberAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/barber/appointments/{{appointmentId}}/reject",
+            "description": "### Objetivo\nRecusar uma solicitação: transição **`pending` → `cancelled`**. O horário volta a ficar livre e o **cliente é notificado** via evento `appointment.rejected` publicado no MOM.\n\n### Rota\n`PATCH /api/v1/barber/appointments/:id/reject`\n\nO `:id` deve ser o UUID do agendamento (**`appointmentId`**) cujo `barber_id` é o seu.\n\n### Autenticação\nBearer **`barberAccessToken`** (papel `barber`).\n\n### Corpo\nNão envie body.\n\n### Respostas esperadas\n- **200** — agendamento com `status: cancelled` e dados do cliente.\n- **404** — agendamento não existe ou não é desse barbeiro.\n- **409** — já não está `pending` (ex.: já confirmado ou cancelado).\n- **403** / **401** — perfil ou token."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\"id\":\"dddddddd-dddd-4ddd-8ddd-dddddddddddd\",\"clientId\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\"barberId\":\"cccccccc-cccc-4ccc-8ccc-cccccccccccc\",\"clientFullName\":\"Caio Kodato\",\"clientEmail\":\"caio@gmail.com\",\"barberName\":\"Henrique Volponi\",\"startsAt\":\"2026-06-15T12:30:00.000Z\",\"endsAt\":\"2026-06-15T13:00:00.000Z\",\"status\":\"cancelled\",\"createdAt\":\"2026-06-15T15:36:00.000Z\"}"
+            },
+            {
+              "name": "409 Conflict",
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\"error\":\"Só é possível recusar solicitações com status pending.\"}"
+            }
+          ]
         }
       ]
     }

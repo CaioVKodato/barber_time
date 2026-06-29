@@ -76,6 +76,13 @@ export class RabbitMQClient {
       ROUTING_KEYS.APPOINTMENT_CONFIRMED,
     );
 
+    await this.#channel.assertQueue(QUEUES.CLIENT_APPOINTMENT_REJECTED, { durable: true });
+    await this.#channel.bindQueue(
+      QUEUES.CLIENT_APPOINTMENT_REJECTED,
+      EXCHANGE_NAME,
+      ROUTING_KEYS.APPOINTMENT_REJECTED,
+    );
+
     this.#topologyReady = true;
   }
 

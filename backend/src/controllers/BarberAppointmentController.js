@@ -28,4 +28,14 @@ export class BarberAppointmentController {
       next(e);
     }
   };
+
+  reject = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const result = await this.service.rejectAppointment(req.auth.userId, id);
+      return res.status(200).json(result);
+    } catch (e) {
+      next(e);
+    }
+  };
 }

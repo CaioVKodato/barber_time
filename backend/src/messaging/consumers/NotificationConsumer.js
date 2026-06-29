@@ -32,9 +32,15 @@ export class NotificationConsumer {
       void this.#handleClientNotification(msg, channel);
     });
 
+    await channel.consume(QUEUES.CLIENT_APPOINTMENT_REJECTED, (msg) => {
+      if (!msg) return;
+      void this.#handleClientRejection(msg, channel);
+    });
+
     console.log('[NotificationConsumer] Ouvindo filas:');
     console.log(`  - ${QUEUES.BARBER_NEW_APPOINTMENT}`);
     console.log(`  - ${QUEUES.CLIENT_APPOINTMENT_CONFIRMED}`);
+    console.log(`  - ${QUEUES.CLIENT_APPOINTMENT_REJECTED}`);
     if (this.emailService.isReady()) {
       try {
         await this.emailService.verifyConnection();
@@ -128,6 +134,46 @@ export class NotificationConsumer {
       channel.ack(msg);
     } catch (err) {
       console.error('[NotificationConsumer] Erro ao processar mensagem (cliente):', err);
+      channel.nack(msg, false, false);
+    }
+  }
+
+  /**
+   * @param {import('amqplib').ConsumeMessage} msg
+   * @param {import('amqplib').Channel} channel
+   */
+  async #handleClientRejection(msg, channel) {
+    try {
+      const envelope = JSON.parse(msg.content.toString());
+      const p = envelope.payload;
+
+      console.log('────────────────────────────────────────────────────────');
+      console.log('[NOTIFICAÇÃO → CLIENTE] Solicitação recusada pelo barbeiro');
+      console.log(`  Evento:     ${envelope.eventType} (${envelope.eventId})`);
+      console.log(`  Cliente:    ${p.clientFullName} <${p.clientEmail}>`);
+      console.log(`  Barbeiro:   ${p.barberName}`);
+      console.log(`  Horário:    ${p.startsAt} → ${p.endsAt}`);
+      console.log(`  ID agend.:  ${p.appointmentId}`);
+
+      if (this.emailService.isReady() && p.clientEmail) {
+        await this.#trySendEmail(() =>
+          this.emailService.sendClientAppointmentRejected({
+            to: p.clientEmail,
+            clientFullName: p.clientFullName,
+            barberName: p.barberName,
+            startsAt: p.startsAt,
+            endsAt: p.endsAt,
+            appointmentId: p.appointmentId,
+          }),
+          p.clientEmail,
+        );
+      }
+
+      console.log('────────────────────────────────────────────────────────');
+
+      channel.ack(msg);
+    } catch (err) {
+      console.error('[NotificationConsumer] Erro ao processar mensagem (recusa):', err);
       channel.nack(msg, false, false);
     }
   }

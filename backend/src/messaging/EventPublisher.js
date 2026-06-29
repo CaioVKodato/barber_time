@@ -32,6 +32,14 @@ export class EventPublisher {
   }
 
   /**
+   * @param {{ appointmentId: string; clientId: string; clientFullName: string; clientEmail: string; barberId: string; barberName: string; startsAt: string; endsAt: string }} data
+   */
+  async publishAppointmentRejected(data) {
+    const envelope = this.#buildEnvelope(EVENT_TYPES.APPOINTMENT_REJECTED, data);
+    await this.#publish(ROUTING_KEYS.APPOINTMENT_REJECTED, envelope);
+  }
+
+  /**
    * @param {string} eventType
    * @param {Record<string, unknown>} payload
    */
